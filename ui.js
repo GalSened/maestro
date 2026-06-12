@@ -31,7 +31,7 @@
         <div class="home-head">
           <h1 class="logo">מאסטרו<small>MAESTRO</small></h1>
           <div class="stats">
-            ${streak > 0 ? `<span>🔥 <b>${streak}</b> ימים</span>` : ''}
+            ${streak > 0 ? `<span>🔥 <b>${streak}</b> ${streak === 1 ? 'יום' : 'ימים'}</span>` : ''}
             <span>🎵 <b>${progress.totalNotes().toLocaleString()}</b> תווים</span>
           </div>
         </div>
