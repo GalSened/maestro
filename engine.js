@@ -293,6 +293,55 @@
     };
   }
 
+  // ---------- custom songs (user-added, stored locally, never shipped) ----------
+  const CUSTOM_KEY = 'maestro.custom';
+
+  function createCustomStore(storage) {
+    const mem = new Map();
+    const store = storage || { getItem: k => (mem.has(k) ? mem.get(k) : null), setItem: (k, v) => mem.set(k, v) };
+    let defs;
+    try { defs = JSON.parse(store.getItem(CUSTOM_KEY)) || []; }
+    catch (e) { defs = []; }
+    if (!Array.isArray(defs)) defs = [];
+    let seq = defs.length;
+
+    const save = () => { try { store.setItem(CUSTOM_KEY, JSON.stringify(defs)); } catch (e) { /* storage blocked */ } };
+
+    const build = def => Object.assign(
+      buildSong({ en: def.en || 'My Song', tier: 2, bpm: def.bpm || 100, ...def }),
+      { custom: true });
+
+    function add(input) {
+      if (!input.he || !input.he.trim()) throw new Error('חסר שם לשיר (he)');
+      const def = {
+        id: 'custom-' + Date.now().toString(36) + '-' + (++seq),
+        he: input.he.trim(), en: input.en || 'My Song',
+        tier: 2, bpm: input.bpm || 100, key: input.key || '',
+        melody: input.melody, chords: input.chords || '',
+      };
+      const song = build(def); // throws with a clear token/range message if invalid
+      defs.push(def);
+      save();
+      return song;
+    }
+
+    function list() {
+      const out = [];
+      for (const d of defs) {
+        try { out.push(build(d)); }
+        catch (e) { /* skip songs that no longer validate — never break the app */ }
+      }
+      return out;
+    }
+
+    function remove(id) {
+      defs = defs.filter(d => d.id !== id);
+      save();
+    }
+
+    return { add, list, remove };
+  }
+
   return {
     RANGE_LO, RANGE_HI,
     noteToMidi, midiToName, isBlackKey,
@@ -300,6 +349,6 @@
     buildSong, beatsToMs,
     keyToMidi, midiToKey,
     createWaitMode, createScorer, starsForAccuracy,
-    unlockedCount, createProgress,
+    unlockedCount, createProgress, createCustomStore,
   };
 });

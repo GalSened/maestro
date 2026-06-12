@@ -7,6 +7,8 @@
   const DEFS_BY_ID = Object.fromEntries(SONGS.map(s => [s.id, s]));
 
   const progress = M.createProgress(window.localStorage);
+  const customStore = M.createCustomStore(window.localStorage);
+  const findSong = id => DEFS_BY_ID[id] || customStore.list().find(s => s.id === id);
   const SETTINGS_KEY = 'maestro.settings';
   let settings = { accomp: true, labels: true, tempo: 0.7 };
   try { Object.assign(settings, JSON.parse(localStorage.getItem(SETTINGS_KEY)) || {}); } catch (e) { /* defaults */ }
@@ -38,10 +40,19 @@
         <p class="tagline">לומדים לנגן שירים אמיתיים — מהדקה הראשונה.</p>
         <div class="setlist">
           ${SONGS.map((s, i) => songCard(s, i, i < open)).join('')}
+          ${customStore.list().map(s => songCard(s, -1, true)).join('')}
+          <button class="song-card add-card">＋ הוסיפו שיר משלכם</button>
         </div>
       </div>`;
-    app.querySelectorAll('.song-card:not(.locked)').forEach(el =>
+    app.querySelectorAll('.song-card:not(.locked):not(.add-card)').forEach(el =>
       el.addEventListener('click', () => openSong(el.dataset.id)));
+    app.querySelector('.add-card').addEventListener('click', renderAddSong);
+    app.querySelectorAll('.del-custom').forEach(el =>
+      el.addEventListener('click', e => {
+        e.stopPropagation();
+        customStore.remove(el.dataset.id);
+        renderHome();
+      }));
   }
 
   function songCard(s, i, unlocked) {
@@ -49,17 +60,70 @@
     const stars = '<span>' + '★'.repeat(p.stars) + '</span><span class="off">' + '★'.repeat(3 - p.stars) + '</span>';
     return `
       <button class="song-card ${unlocked ? '' : 'locked'}" data-id="${s.id}" ${unlocked ? '' : 'disabled'}>
-        <span class="song-num">${unlocked ? i + 1 : '🔒'}</span>
+        <span class="song-num">${s.custom ? '🎵' : unlocked ? i + 1 : '🔒'}</span>
         <span class="song-info">
-          <h3 class="song-he">${s.he}</h3>
-          <div class="song-en">${s.en}</div>
+          <h3 class="song-he">${esc(s.he)}</h3>
+          <div class="song-en">${esc(s.en)}</div>
         </span>
         <span class="song-meta">
           ${unlocked
             ? `<span class="stars">${stars}</span>${p.learnDone ? '<span class="tier-dots">נלמד ✓</span>' : `<span class="tier-dots">${'●'.repeat(s.tier)}</span>`}`
             : '<span class="lock-hint">סיימו שיר כדי לפתוח</span>'}
         </span>
+        ${s.custom ? `<span class="del-custom" data-id="${s.id}" title="מחיקה">✕</span>` : ''}
       </button>`;
+  }
+
+  /* ============ ADD CUSTOM SONG ============ */
+  function renderAddSong() {
+    current && current.destroy && current.destroy();
+    current = null;
+    app.innerHTML = `
+      <div class="screen home">
+        <div class="topbar" style="padding-inline:0">
+          <button class="btn-ghost" id="back">→ חזרה</button>
+          <h2 class="song-title">שיר משלכם</h2>
+        </div>
+        <p class="tagline">כתבו תווים בפורמט פשוט: <b dir="ltr">C4:1</b> = דו (אוקטבה 4) למשך פעמה אחת. קו <b dir="ltr">|</b> מפריד בין משפטים. (דו=C רה=D מי=E פה=F סול=G לה=A סי=B, דיאז: <b dir="ltr">F#4</b>)</p>
+        <div class="add-form">
+          <label>שם השיר<input id="f-name" type="text" placeholder="השיר שלי"></label>
+          <label>מנגינה<textarea id="f-melody" dir="ltr" rows="4" placeholder="E4:1 E4:1 F4:1 G4:1 | G4:1 F4:1 E4:1 D4:1"></textarea></label>
+          <label>ליווי (לא חובה)<input id="f-chords" dir="ltr" type="text" placeholder="C:4 G7:4"></label>
+          <label>קצב (BPM)<input id="f-bpm" type="number" value="100" min="40" max="200"></label>
+          <div class="form-err" id="f-err"></div>
+          <div class="btn-row" style="justify-content:flex-start">
+            <button class="btn-main" id="f-save">שמירה</button>
+            <button class="btn-ghost" id="f-listen">🔊 האזנה</button>
+          </div>
+        </div>
+      </div>`;
+    document.getElementById('back').onclick = renderHome;
+    const read = () => ({
+      he: document.getElementById('f-name').value,
+      melody: document.getElementById('f-melody').value,
+      chords: document.getElementById('f-chords').value,
+      bpm: Number(document.getElementById('f-bpm').value) || 100,
+    });
+    const showErr = e => { document.getElementById('f-err').textContent = '⚠ ' + e.message; };
+    document.getElementById('f-listen').onclick = () => {
+      try {
+        const d = read();
+        const song = M.buildSong({ id: 'preview', he: d.he || 'תצוגה', en: 'preview', tier: 2, bpm: d.bpm, melody: d.melody, chords: d.chords });
+        document.getElementById('f-err').textContent = '';
+        const t0 = A.now() + 0.1;
+        for (const n of song.notes.slice(0, 24)) {
+          A.note(n.midi, { when: t0 + M.beatsToMs(n.start, song.bpm, 1) / 1000, dur: M.beatsToMs(n.beats, song.bpm, 1) / 1000 });
+        }
+      } catch (e) { showErr(e); }
+    };
+    document.getElementById('f-save').onclick = () => {
+      try { customStore.add(read()); toast('🎵 השיר נוסף!'); renderHome(); }
+      catch (e) { showErr(e); }
+    };
+  }
+
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   }
 
   /* ================= KEY LAYOUT ================= */
@@ -85,7 +149,8 @@
 
   function openSong(id, mode) {
     current && current.destroy();
-    const song = DEFS_BY_ID[id];
+    const song = findSong(id);
+    if (!song) return renderHome();
     const p = progress.get(id);
     mode = mode || (p.learnDone ? 'play' : 'learn');
     if (!p.learnDone) mode = 'learn';
@@ -94,7 +159,7 @@
       <div class="screen song-screen">
         <div class="topbar">
           <button class="btn-ghost" id="back">→ חזרה</button>
-          <h2 class="song-title">${song.he}</h2>
+          <h2 class="song-title">${esc(song.he)}</h2>
           <span class="midi-badge ${midiConnected ? 'on' : ''}" id="midi-badge">🎹 מחובר</span>
           <button class="btn-ghost ${settings.labels ? 'on' : ''}" id="labels" title="שמות תווים">🔤</button>
         </div>
@@ -406,7 +471,7 @@
       confetti();
       showResults({
         title: 'למדתם את השיר! 🎉',
-        sub: `"${this.song.he}" — כל המשפטים הושלמו`,
+        sub: `"${esc(this.song.he)}" — כל המשפטים הושלמו`,
         starsEl: '<div class="acc-line">✓</div>',
         rows: [],
         actions: [
@@ -551,7 +616,7 @@
       if (this.mode === 'perform') {
         progress.recordResult(this.song.id, { accuracy: s.accuracy, stars: s.stars });
         title = s.stars >= 3 ? 'הופעה מושלמת!' : s.stars >= 1 ? 'כל הכבוד!' : 'כמעט שם!';
-        sub = `"${this.song.he}" בקצב מלא`;
+        sub = `"${esc(this.song.he)}" בקצב מלא`;
         if (s.stars >= 1) confetti();
         nextAction = s.stars >= 1
           ? { label: 'לשיר הבא ←', primary: true, onClick: () => { renderHome(); } }

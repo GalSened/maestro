@@ -262,6 +262,27 @@ input[type=range] { accent-color: var(--gold); width: 110px; }
 
 #fx-canvas { position: fixed; inset: 0; pointer-events: none; z-index: 30; }
 
+/* ============ ADD-SONG FORM ============ */
+.add-card {
+  justify-content: center; color: var(--gold); font-size: 17px;
+  border-style: dashed; border-color: rgba(255, 194, 94, .35);
+  background: rgba(255, 194, 94, .04);
+}
+.del-custom {
+  position: absolute; top: 8px; left: 10px;
+  color: var(--ink-dim); font-size: 14px; padding: 4px 7px; border-radius: 8px;
+}
+.del-custom:hover { color: var(--rose); background: rgba(255, 122, 138, .12); }
+.song-card { position: relative; }
+.add-form { display: flex; flex-direction: column; gap: 14px; max-width: 560px; }
+.add-form label { display: flex; flex-direction: column; gap: 6px; font-size: 14px; color: var(--ink-dim); }
+.add-form input, .add-form textarea {
+  background: var(--stage-1); border: 1px solid var(--line); border-radius: 12px;
+  color: var(--ink); font: inherit; padding: 11px 14px; resize: vertical;
+}
+.add-form input:focus, .add-form textarea:focus { outline: none; border-color: var(--gold); }
+.form-err { color: var(--rose); font-size: 14px; min-height: 20px; }
+
 .toast {
   position: fixed; bottom: calc(env(safe-area-inset-bottom) + 24px); left: 50%;
   transform: translateX(-50%);

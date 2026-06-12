@@ -18,11 +18,22 @@
         'C:4 F:2 C:2 F:2 C:2 G7:2 C:2',
     },
     {
-      id: 'mary', he: 'מרי והכבשה', en: 'Mary Had a Little Lamb', tier: 1, bpm: 110, key: 'C',
+      // Hänschen klein — the melody of the Israeli kids' classic
+      id: 'yonatan', he: 'יונתן הקטן', en: 'Yonatan HaKatan', tier: 1, bpm: 110, key: 'C',
       melody:
-        'E4:1 D4:1 C4:1 D4:1 E4:1 E4:1 E4:2 | D4:1 D4:1 D4:2 E4:1 G4:1 G4:2 | ' +
-        'E4:1 D4:1 C4:1 D4:1 E4:1 E4:1 E4:1 E4:1 | D4:1 D4:1 E4:1 D4:1 C4:4',
-      chords: 'C:8 G7:4 C:4 C:8 G7:4 C:4',
+        'G4:1 E4:1 E4:2 F4:1 D4:1 D4:2 | C4:1 D4:1 E4:1 F4:1 G4:1 G4:1 G4:2 | ' +
+        'D4:1 D4:1 D4:1 D4:1 D4:1 E4:1 F4:2 | E4:1 E4:1 E4:1 E4:1 E4:1 F4:1 G4:2 | ' +
+        'G4:1 E4:1 E4:2 F4:1 D4:1 D4:2 | C4:1 E4:1 G4:1 G4:1 C4:4',
+      chords: 'C:4 G7:4 C:4 G7:4 G7:8 C:6 G7:2 C:4 G7:4 C:2 G7:2 C:4',
+    },
+    {
+      // Frère Jacques — known to every Israeli kid as אחינו יעקב
+      id: 'frere', he: 'אחינו יעקב', en: 'Frère Jacques', tier: 1, bpm: 100, key: 'C',
+      melody:
+        'C4:1 D4:1 E4:1 C4:1 C4:1 D4:1 E4:1 C4:1 | E4:1 F4:1 G4:2 E4:1 F4:1 G4:2 | ' +
+        'G4:0.5 A4:0.5 G4:0.5 F4:0.5 E4:1 C4:1 G4:0.5 A4:0.5 G4:0.5 F4:0.5 E4:1 C4:1 | ' +
+        'C4:1 G3:1 C4:2 C4:1 G3:1 C4:2',
+      chords: 'C:8 C:8 C:8 C:1 G7:1 C:2 C:1 G7:1 C:2',
     },
     {
       id: 'odetojoy', he: 'המנון לשמחה', en: 'Ode to Joy', tier: 1, bpm: 110, key: 'C',
@@ -57,24 +68,6 @@
         'C:1 G:1 C:1 G:1 C:1 F:1 G:1 C:1 C:1 G:1 C:1 G:1 C:1 F:1 G:1 C:1',
     },
     {
-      id: 'saints', he: 'הקדושים צועדים', en: 'When the Saints', tier: 2, bpm: 120, key: 'C',
-      melody:
-        'C4:1 E4:1 F4:1 G4:5 | C4:1 E4:1 F4:1 G4:5 | ' +
-        'C4:1 E4:1 F4:1 G4:2 E4:2 C4:2 E4:2 D4:6 | ' +
-        'E4:2 E4:1 D4:1 C4:3 E4:1 G4:3 G4:1 F4:4 | ' +
-        'E4:1 F4:1 G4:2 E4:2 C4:2 D4:2 C4:6',
-      chords: 'C:8 C:8 C:8 G7:8 C:8 F:8 C:4 G7:4 C:8',
-    },
-    {
-      id: 'amazing', he: 'חסד מופלא', en: 'Amazing Grace', tier: 2, bpm: 90, key: 'C',
-      melody:
-        'G4:1 C5:2 E5:0.5 C5:0.5 E5:2 D5:1 C5:2 A4:1 G4:3 | ' +
-        'G4:1 C5:2 E5:0.5 C5:0.5 E5:2 D5:1 G5:6 | ' +
-        'G5:1 E5:2 G5:0.5 E5:0.5 C5:2 G4:1 A4:2 C5:0.5 A4:0.5 G4:3 | ' +
-        'G4:1 C5:2 E5:0.5 C5:0.5 E5:2 D5:1 C5:6',
-      chords: 'C:4 F:3 C:3 G7:3 C:4 C:3 G7:6 C:4 F:3 C:3 G7:3 C:4 F:3 G7:3 C:3',
-    },
-    {
       // Verified vs Wikipedia LilyPond score + Hymnary tune ISRAELI incipit (Dm)
       id: 'hevenu', he: 'הבאנו שלום עליכם', en: 'Hevenu Shalom Aleichem', tier: 2, bpm: 115, key: 'Dm',
       melody:
@@ -106,26 +99,14 @@
       chords: 'Am:5 E7:6 Am:6 E7:4 Am:3',
     },
     {
-      id: 'greensleeves', he: 'שרוולים ירוקים', en: 'Greensleeves', tier: 3, bpm: 100, key: 'Am',
+      // Scott Joplin 1902 (public domain) — the famous A-strain opening
+      id: 'entertainer', he: 'האנטרטיינר', en: 'The Entertainer', tier: 3, bpm: 95, key: 'C',
       melody:
-        'A4:1 C5:2 D5:1 E5:1.5 F5:0.5 E5:1 D5:2 B4:1 | ' +
-        'G4:1.5 A4:0.5 B4:1 C5:2 A4:1 A4:1.5 G#4:0.5 A4:1 B4:2 G#4:1 E4:3 | ' +
-        'A4:1 C5:2 D5:1 E5:1.5 F5:0.5 E5:1 D5:2 B4:1 | ' +
-        'G4:1.5 A4:0.5 B4:1 C5:1.5 B4:0.5 A4:1 G#4:1.5 F#4:0.5 G#4:1 A4:3',
-      chords: 'Am:6 G:4 Am:5 E7:5 Am:6 G:4 Am:5 E7:5 Am:7',
-    },
-    {
-      id: 'minuet', he: 'מינואט בסול', en: 'Minuet in G', tier: 3, bpm: 110, key: 'G',
-      melody:
-        'D5:1 G4:0.5 A4:0.5 B4:0.5 C5:0.5 D5:1 G4:1 G4:1 | ' +
-        'E5:1 C5:0.5 D5:0.5 E5:0.5 F#5:0.5 G5:1 G4:1 G4:1 | ' +
-        'C5:1 D5:0.5 C5:0.5 B4:0.5 A4:0.5 B4:1 C5:0.5 B4:0.5 A4:0.5 G4:0.5 | ' +
-        'F#4:1 G4:0.5 A4:0.5 B4:0.5 G4:0.5 A4:3 | ' +
-        'D5:1 G4:0.5 A4:0.5 B4:0.5 C5:0.5 D5:1 G4:1 G4:1 | ' +
-        'E5:1 C5:0.5 D5:0.5 E5:0.5 F#5:0.5 G5:1 G4:1 G4:1 | ' +
-        'C5:1 D5:0.5 C5:0.5 B4:0.5 A4:0.5 B4:1 C5:0.5 B4:0.5 A4:0.5 G4:0.5 | ' +
-        'A4:1 B4:0.5 A4:0.5 G4:0.5 F#4:0.5 G4:3',
-      chords: 'G:6 C:3 G:3 C:3 G:3 D7:6 G:6 C:3 G:3 C:3 G:3 D7:3 G:3',
+        'D4:0.5 D#4:0.5 E4:0.5 C5:1 E4:0.5 C5:1 E4:0.5 C5:3.5 | ' +
+        'C5:0.5 D5:0.5 D#5:0.5 E5:0.5 C5:0.5 D5:0.5 E5:1 B4:0.5 D5:1 C5:2.5 | ' +
+        'D4:0.5 D#4:0.5 E4:0.5 C5:1 E4:0.5 C5:1 E4:0.5 C5:3.5 | ' +
+        'C5:0.5 D5:0.5 D#5:0.5 E5:0.5 C5:0.5 D5:0.5 E5:1 B4:0.5 D5:1 C5:2.5',
+      chords: 'C:8 C:4 G7:2 C:2 C:8 C:4 G7:2 C:2',
     },
     {
       // Verified vs en+he Wikipedia LilyPond scores (pitch-identical); Dm standard key

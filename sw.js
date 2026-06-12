@@ -1,6 +1,6 @@
 /* MAESTRO service worker — offline-first app shell.
  * Bump VERSION on every release: old caches are purged on activate. */
-const VERSION = 'maestro-v1';
+const VERSION = 'maestro-v2';
 const FONT_CACHE = 'maestro-fonts';
 
 const ASSETS = [
