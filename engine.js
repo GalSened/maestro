@@ -109,10 +109,197 @@
     return (beats * 60000) / (bpm * (tempoFactor || 1));
   }
 
+  // ---------- computer-keyboard mapping ----------
+  // GarageBand/Ableton standard: home row = white keys, row above = black keys.
+  const KEY_OFFSETS = {
+    a: 0, w: 1, s: 2, e: 3, d: 4, f: 5, t: 6, g: 7, y: 8, h: 9, u: 10, j: 11,
+    k: 12, o: 13, l: 14, p: 15, ';': 16,
+  };
+
+  function keyToMidi(key, baseMidi) {
+    const off = KEY_OFFSETS[String(key).toLowerCase()];
+    return off == null ? null : baseMidi + off;
+  }
+
+  function midiToKey(midi, baseMidi) {
+    const off = midi - baseMidi;
+    for (const k in KEY_OFFSETS) if (KEY_OFFSETS[k] === off) return k;
+    return null;
+  }
+
+  // ---------- wait-mode state machine ----------
+  // Learn mode: the song waits for the right key. Each phrase loops until
+  // `passesRequired` clean (mistake-free) passes, then chains to the next.
+  function createWaitMode(song, opts) {
+    const passesRequired = (opts && opts.passesRequired) || 2;
+    let phrase = 0, noteIdx = song.phrases[0][0];
+    let cleanPasses = 0, dirty = false, done = false;
+
+    const range = () => song.phrases[phrase];
+
+    function jumpToPhrase(p) {
+      phrase = p; noteIdx = song.phrases[p][0];
+      cleanPasses = 0; dirty = false; done = false;
+    }
+
+    function press(midi) {
+      if (done) return { correct: false, phrasePass: false, phraseDone: false, done: true };
+      if (midi !== song.notes[noteIdx].midi) {
+        dirty = true;
+        return { correct: false, phrasePass: false, phraseDone: false, done: false };
+      }
+      const res = { correct: true, phrasePass: false, phraseDone: false, done: false };
+      if (noteIdx < range()[1]) { noteIdx++; return res; }
+      // pass finished
+      if (!dirty) { cleanPasses++; res.phrasePass = true; }
+      dirty = false;
+      if (cleanPasses >= passesRequired) {
+        res.phraseDone = true;
+        if (phrase >= song.phrases.length - 1) { done = true; res.done = true; noteIdx = -1; }
+        else jumpToPhrase(phrase + 1);
+      } else {
+        noteIdx = range()[0]; // loop the phrase
+      }
+      return res;
+    }
+
+    return {
+      press, jumpToPhrase,
+      expected: () => (done ? null : song.notes[noteIdx].midi),
+      expectedIndex: () => (done ? null : noteIdx),
+      phraseRange: () => range().slice(),
+      state: () => ({ phrase, noteIdx, cleanPasses, done, phraseCount: song.phrases.length }),
+    };
+  }
+
+  // ---------- scorer (Play / Perform modes) ----------
+  const PERFECT_MS = 120, GOOD_MS = 260;
+
+  function starsForAccuracy(acc) {
+    return acc >= 0.93 ? 3 : acc >= 0.8 ? 2 : acc >= 0.6 ? 1 : 0;
+  }
+
+  function createScorer(song, opts) {
+    const tempoFactor = (opts && opts.tempoFactor) || 1;
+    const expected = song.notes.map(n => ({
+      midi: n.midi, t: beatsToMs(n.start, song.bpm, tempoFactor), state: 'pending',
+    }));
+    let perfect = 0, good = 0, missed = 0, wrong = 0, combo = 0, maxCombo = 0;
+
+    const bumpCombo = () => { combo++; if (combo > maxCombo) maxCombo = combo; };
+
+    function press(midi, tMs) {
+      // nearest pending note of this pitch within the good window
+      let best = null, bestDt = Infinity;
+      for (const e of expected) {
+        if (e.state !== 'pending' || e.midi !== midi) continue;
+        const dt = Math.abs(tMs - e.t);
+        if (dt < bestDt) { best = e; bestDt = dt; }
+      }
+      if (!best || bestDt > GOOD_MS) {
+        wrong++; combo = 0;
+        return { verdict: 'miss', noteIndex: best ? expected.indexOf(best) : -1 };
+      }
+      best.state = bestDt <= PERFECT_MS ? 'perfect' : 'good';
+      if (best.state === 'perfect') perfect++; else good++;
+      bumpCombo();
+      return { verdict: best.state, noteIndex: expected.indexOf(best) };
+    }
+
+    function sweep(tMs) {
+      let n = 0;
+      for (const e of expected) {
+        if (e.state === 'pending' && tMs - e.t > GOOD_MS) { e.state = 'missed'; missed++; combo = 0; n++; }
+      }
+      return n;
+    }
+
+    function summary() {
+      const total = expected.length;
+      const accuracy = total ? (perfect + 0.6 * good) / total : 0;
+      return {
+        perfect, good, missed, wrong, combo, maxCombo, total,
+        accuracy,
+        stars: starsForAccuracy(accuracy),
+        finished: expected.every(e => e.state !== 'pending'),
+      };
+    }
+
+    return { press, sweep, summary, noteState: i => expected[i].state };
+  }
+
+  // ---------- progression ----------
+  const FREE_SONGS = 3;
+
+  function unlockedCount(progressMap, songIds) {
+    let earned = 0;
+    for (const id of songIds) {
+      const p = progressMap[id];
+      if (p && (p.learnDone || (p.stars || 0) >= 1)) earned++;
+    }
+    return Math.min(songIds.length, FREE_SONGS + earned);
+  }
+
+  // ---------- progress store ----------
+  const STORE_KEY = 'maestro.v1';
+
+  function createProgress(storage) {
+    const mem = new Map();
+    const store = storage || { getItem: k => (mem.has(k) ? mem.get(k) : null), setItem: (k, v) => mem.set(k, v) };
+    let data;
+    try { data = JSON.parse(store.getItem(STORE_KEY)) || {}; }
+    catch (e) { data = {}; }
+    if (!data.songs) data.songs = {};
+    if (!data.streak) data.streak = { last: null, days: 0 };
+    if (!data.totalNotes) data.totalNotes = 0;
+
+    const save = () => { try { store.setItem(STORE_KEY, JSON.stringify(data)); } catch (e) { /* storage full/blocked */ } };
+    const song = id => data.songs[id] || { learnDone: false, stars: 0, bestAccuracy: 0, plays: 0 };
+
+    function update(id, patch) {
+      data.songs[id] = Object.assign(song(id), patch);
+      save();
+      return data.songs[id];
+    }
+
+    function recordResult(id, { accuracy, stars }) {
+      const s = song(id);
+      return update(id, {
+        plays: s.plays + 1,
+        stars: Math.max(s.stars, stars),
+        bestAccuracy: Math.max(s.bestAccuracy, accuracy),
+      });
+    }
+
+    function touchStreak(dayStr) {
+      const st = data.streak;
+      if (st.last !== dayStr) {
+        const prev = new Date(st.last + 'T00:00:00Z');
+        const cur = new Date(dayStr + 'T00:00:00Z');
+        st.days = (st.last && cur - prev === 86400000) ? st.days + 1 : 1;
+        st.last = dayStr;
+        save();
+      }
+      return { streakDays: st.days };
+    }
+
+    function addNotes(n) { data.totalNotes += n; save(); return data.totalNotes; }
+
+    return {
+      get: song, update, recordResult, touchStreak, addNotes,
+      all: () => data.songs,
+      streak: () => ({ streakDays: data.streak.days, last: data.streak.last }),
+      totalNotes: () => data.totalNotes,
+    };
+  }
+
   return {
     RANGE_LO, RANGE_HI,
     noteToMidi, midiToName, isBlackKey,
     parseMelody, parseChords, chordToMidis,
     buildSong, beatsToMs,
+    keyToMidi, midiToKey,
+    createWaitMode, createScorer, starsForAccuracy,
+    unlockedCount, createProgress,
   };
 });
