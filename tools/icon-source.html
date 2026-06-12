@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  body { margin: 0; background: #555; display: flex; flex-wrap: wrap; gap: 8px; }
+  .box { display: block; line-height: 0; }
+  #i512, #imask { width: 512px; height: 512px; }
+  #i192 { width: 192px; height: 192px; }
+  #i180 { width: 180px; height: 180px; }
+  svg { width: 100%; height: 100%; display: block; }
+</style>
+</head>
+<body>
+<template id="art">
+  <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#ffd98a"/>
+        <stop offset="1" stop-color="#e09a2d"/>
+      </linearGradient>
+      <radialGradient id="glow" cx="0.5" cy="0.38" r="0.55">
+        <stop offset="0" stop-color="#ffc25e" stop-opacity="0.32"/>
+        <stop offset="1" stop-color="#ffc25e" stop-opacity="0"/>
+      </radialGradient>
+      <linearGradient id="ivory" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#fffdf6"/>
+        <stop offset="1" stop-color="#ded2b2"/>
+      </linearGradient>
+      <linearGradient id="ebony" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#303547"/>
+        <stop offset="1" stop-color="#05060a"/>
+      </linearGradient>
+    </defs>
+    <rect width="512" height="512" fill="#11141f"/>
+    <rect width="512" height="512" fill="url(#glow)"/>
+    <g id="content">
+      <!-- eighth note -->
+      <g fill="url(#gold)">
+        <ellipse cx="203" cy="296" rx="54" ry="40" transform="rotate(-18 203 296)"/>
+        <rect x="243" y="108" width="16" height="192" rx="6"/>
+        <path d="M259,108 C342,142 348,214 298,258 C330,196 312,152 259,138 Z"/>
+      </g>
+      <!-- keyboard strip -->
+      <g>
+        <rect x="0" y="386" width="512" height="126" fill="#0a0c14"/>
+        <rect x="2"   y="390" width="69" height="122" rx="6" fill="url(#ivory)"/>
+        <rect x="75"  y="390" width="69" height="122" rx="6" fill="url(#ivory)"/>
+        <rect x="148" y="390" width="69" height="122" rx="6" fill="url(#ivory)"/>
+        <rect x="221" y="390" width="69" height="122" rx="6" fill="url(#ivory)"/>
+        <rect x="294" y="390" width="69" height="122" rx="6" fill="url(#ivory)"/>
+        <rect x="367" y="390" width="69" height="122" rx="6" fill="url(#ivory)"/>
+        <rect x="440" y="390" width="70" height="122" rx="6" fill="url(#ivory)"/>
+        <rect x="51"  y="386" width="44" height="78" rx="5" fill="url(#ebony)"/>
+        <rect x="124" y="386" width="44" height="78" rx="5" fill="url(#ebony)"/>
+        <rect x="270" y="386" width="44" height="78" rx="5" fill="url(#ebony)"/>
+        <rect x="343" y="386" width="44" height="78" rx="5" fill="url(#ebony)"/>
+        <rect x="416" y="386" width="44" height="78" rx="5" fill="url(#ebony)"/>
+      </g>
+    </g>
+  </svg>
+</template>
+<div class="box" id="i512"></div>
+<div class="box" id="i192"></div>
+<div class="box" id="i180"></div>
+<div class="box" id="imask"></div>
+<script>
+  const tpl = document.getElementById('art');
+  for (const id of ['i512', 'i192', 'i180', 'imask']) {
+    const svg = tpl.content.firstElementChild.cloneNode(true);
+    if (id === 'imask') {
+      // maskable: keep content inside the 80% safe zone
+      const g = svg.querySelector('#content');
+      g.setAttribute('transform', 'translate(51.2 51.2) scale(0.8)');
+    }
+    document.getElementById(id).appendChild(svg);
+  }
+</script>
+</body>
+</html>
